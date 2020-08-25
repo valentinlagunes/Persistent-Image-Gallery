@@ -72,6 +72,7 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
         let documentVC = storyBoard.instantiateViewController(withIdentifier: "DocumentMVC")
         if let imageGalleryViewController = documentVC.contents as? ImageGalleryViewController {
             imageGalleryViewController.document = ImageGalleryDocument(fileURL: documentURL)
+            //print(documentURL)
         }
         present(documentVC, animated: true)
     }
