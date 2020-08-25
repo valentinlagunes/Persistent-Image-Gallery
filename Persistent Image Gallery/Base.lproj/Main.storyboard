@@ -142,9 +142,28 @@
                                 <action selector="close:" destination="NQe-Kt-gPE" id="Wz3-wZ-o8X"/>
                             </connections>
                         </barButtonItem>
+                        <barButtonItem key="rightBarButtonItem" style="done" id="TDG-Oz-7hb">
+                            <view key="customView" contentMode="scaleToFill" id="U26-vu-9F1" customClass="TrashIconView" customModule="Persistent_Image_Gallery" customModuleProvider="target">
+                                <rect key="frame" x="777" y="6.5" width="227" height="37"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <subviews>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="trash" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="hlD-bm-J3D">
+                                        <rect key="frame" x="0.0" y="-1" width="227" height="37.5"/>
+                                    </imageView>
+                                </subviews>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="trailing" secondItem="hlD-bm-J3D" secondAttribute="trailing" id="3cH-ob-nzI"/>
+                                    <constraint firstItem="hlD-bm-J3D" firstAttribute="leading" secondItem="U26-vu-9F1" secondAttribute="leading" id="fR0-kg-fC0"/>
+                                    <constraint firstAttribute="bottom" secondItem="hlD-bm-J3D" secondAttribute="bottom" id="jyZ-Ir-KWt"/>
+                                    <constraint firstItem="hlD-bm-J3D" firstAttribute="top" secondItem="U26-vu-9F1" secondAttribute="top" id="tEN-Z0-ZZI"/>
+                                </constraints>
+                            </view>
+                        </barButtonItem>
                     </navigationItem>
                     <connections>
                         <outlet property="collectionView" destination="DWA-mb-LYN" id="k9d-xI-RFt"/>
+                        <outlet property="trashIcon" destination="U26-vu-9F1" id="JuC-Cc-LqA"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Nmq-9I-xXn" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -170,4 +189,7 @@
             <point key="canvasLocation" x="982" y="654"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="trash" catalog="system" width="121" height="128"/>
+    </resources>
 </document>

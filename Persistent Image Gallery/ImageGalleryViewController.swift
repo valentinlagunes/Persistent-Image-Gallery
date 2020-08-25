@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlowLayout, UICollectionViewDragDelegate, UICollectionViewDropDelegate, UICollectionViewDataSource, UICollectionViewDelegate {
+class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlowLayout, UICollectionViewDragDelegate, UICollectionViewDropDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UIDropInteractionDelegate {
 
     @IBOutlet weak var collectionView: UICollectionView! {
         didSet {
@@ -19,6 +19,13 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
             let pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinchZoom(_:)))
             collectionView.addGestureRecognizer(pinch)
             collectionView.dragInteractionEnabled = true
+        }
+    }
+    
+    @IBOutlet weak var trashIcon: TrashIconView! {
+        didSet {
+            let dropInteraction = UIDropInteraction(delegate: self)
+            trashIcon.addInteraction(dropInteraction)
         }
     }
     
@@ -50,6 +57,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     var imageCollection = ImageCollection() {
         didSet {
             if oldValue.images != imageCollection.images {
+                print("didChange")
                 documentDidChange()
             }
         }
@@ -59,6 +67,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
         document?.imageGalleryCollec = imageCollection
         if document?.imageGalleryCollec != nil {
             document?.updateChangeCount(.done)
+            document?.save(to: document!.fileURL, for: .forOverwriting)
         }
     }
 
@@ -118,6 +127,8 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
             as? ImageCollectionViewCell,
             let image = itemCell.imageView.image {
             let dragItem = UIDragItem(itemProvider: NSItemProvider(object: image))
+            //mark index path to delete it easier later
+            imageCollection.images[indexPath.item].indPath = indexPath
             dragItem.localObject = imageCollection.images[indexPath.item]
             return [dragItem]
         } else {
@@ -128,6 +139,8 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
+    
+    //MARK: CollectionViewDelegate Methods
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: standardWidth, height: standardWidth/CGFloat(imageCollection.images[indexPath.item].ratio))
@@ -277,5 +290,36 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
         
     }
     
+    //MARK: Trash UIDropInteraction Delegate
+    
+    func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
+            return session.canLoadObjects(ofClass: UIImage.self)
+    }
+    
+    func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
+
+        return UIDropProposal(operation: .copy)
+    }
+    
+    func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
+        session.loadObjects(ofClass: UIImage.self) { images in
+            let items = session.localDragSession?.items
+            for item in items ?? [] {
+                let draggedImage = item.localObject as? ImageInfoModel
+                self.collectionView.performBatchUpdates({
+                    if self.imageCollection.images.contains(draggedImage!) {
+                        let indPath = draggedImage?.indPath
+                        //print("Index Path: \(indPath)")
+                        self.collectionView.deleteItems(at: [indPath!])
+                        self.imageCollection.images.remove(at: self.imageCollection.images.firstIndex(of: draggedImage!)!)
+                        //self.collectionView.reloadData()
+                    }
+                }, completion: { error in
+                    self.documentDidChange()
+                })
+            }
+
+        }
+    }
     
 }

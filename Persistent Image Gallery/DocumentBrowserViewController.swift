@@ -18,7 +18,7 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
         
         delegate = self
         
-        allowsDocumentCreation = true
+        allowsDocumentCreation = false
         allowsPickingMultipleItems = false
         
         // Update the style of the UIDocumentBrowserViewController
@@ -28,11 +28,13 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
         // Specify the allowed content types of your application via the Info.plist.
         
         // Do any additional setup after loading the view.
-        template = try? FileManager.default.url(for: .applicationSupportDirectory
-            , in: .userDomainMask, appropriateFor: nil
-            , create: true).appendingPathComponent("Untitled.json")
-        if template != nil {
-            allowsDocumentCreation = FileManager.default.createFile(atPath: template!.path, contents: Data())
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            template = try? FileManager.default.url(for: .applicationSupportDirectory
+                , in: .userDomainMask, appropriateFor: nil
+                , create: true).appendingPathComponent("Untitled.json")
+            if template != nil {
+                allowsDocumentCreation = FileManager.default.createFile(atPath: template!.path, contents: Data())
+            }
         }
     }
     
@@ -64,7 +66,7 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
     
     func presentDocument(at documentURL: URL) {
 
-        //documentViewController.modalPresentationStyle = .fullScreen
+        
         
         //present(documentViewController, animated: true, completion: nil)
         
@@ -74,6 +76,7 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
             imageGalleryViewController.document = ImageGalleryDocument(fileURL: documentURL)
             //print(documentURL)
         }
+        documentVC.modalPresentationStyle = .fullScreen
         present(documentVC, animated: true)
     }
 }
