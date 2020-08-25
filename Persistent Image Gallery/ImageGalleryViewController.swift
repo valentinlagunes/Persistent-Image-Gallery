@@ -44,15 +44,25 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     
     //fit about five images per row
     lazy var standardWidth = collectionView.frame.width / 5
-    var imageCollection = ImageCollection() {
-        didSet {
-            collectionView?.reloadData()
-        }
-    }
+    var imageCollection : ImageCollection?
 
+    var document : ImageGalleryDocument?
+    
+    //MARK: LifeCycle
     
     override func viewDidLayoutSubviews() {
         //collectionView.reloadData()
+    }
+    
+     override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        document?.open { success in
+            if success {
+                self.title = self.document?.localizedName
+                self.imageCollection = self.document?.imageCollec
+            }
+            
+        }
     }
     
     
@@ -74,7 +84,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
             as? ImageCollectionViewCell,
             let image = itemCell.imageView.image {
             let dragItem = UIDragItem(itemProvider: NSItemProvider(object: image))
-            dragItem.localObject = imageCollection.images[indexPath.item]
+            dragItem.localObject = imageCollection!.images[indexPath.item]
             return [dragItem]
         } else {
             return []
@@ -86,7 +96,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: standardWidth, height: standardWidth/CGFloat(imageCollection.images[indexPath.item].ratio))
+        return CGSize(width: standardWidth, height: standardWidth/CGFloat(imageCollection!.images[indexPath.item].ratio))
     }
     
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
@@ -101,8 +111,8 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
             if let sourceIndexPath = item.sourceIndexPath {
                 if let imageModelCell = item.dragItem.localObject as? ImageInfoModel {
                     collectionView.performBatchUpdates({
-                        imageCollection.images.remove(at: sourceIndexPath.item)
-                        imageCollection.images.insert(imageModelCell, at: destinationIndexPath.item)
+                        imageCollection!.images.remove(at: sourceIndexPath.item)
+                        imageCollection!.images.insert(imageModelCell, at: destinationIndexPath.item)
                         collectionView.deleteItems(at: [sourceIndexPath])
                         collectionView.insertItems(at: [destinationIndexPath])
                     })
@@ -130,7 +140,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
                             placeholderContext.commitInsertion(dataSourceUpdates: {insertionIndexPath in
                                 if localRatio != nil && localURL != nil
                                 {
-                                    self.imageCollection.images.insert(ImageInfoModel(url: localURL!, aspectRatio: localRatio!), at: insertionIndexPath.item)
+                                    self.imageCollection!.images.insert(ImageInfoModel(url: localURL!, aspectRatio: localRatio!), at: insertionIndexPath.item)
                                 }
                             })
                         } else {
@@ -144,7 +154,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        imageCollection.images.count
+        imageCollection!.images.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -152,7 +162,7 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageCell", for: indexPath)
         
         if let currCell = cell as? ImageCollectionViewCell {
-            currCell.imageURL = imageCollection.images[indexPath.item].myURL.imageURL
+            currCell.imageURL = imageCollection!.images[indexPath.item].myURL.imageURL
             let tap = UITapGestureRecognizer(target: self, action: #selector(tapSegue(recognizer:)))
             tap.numberOfTapsRequired = 1
             tap.numberOfTouchesRequired = 1
