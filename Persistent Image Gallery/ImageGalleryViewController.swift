@@ -18,8 +18,10 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
             collectionView.dropDelegate = self
             let pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinchZoom(_:)))
             collectionView.addGestureRecognizer(pinch)
+            collectionView.dragInteractionEnabled = true
         }
     }
+    
     
     lazy private var minWidth = collectionView.frame.width / 10
     lazy private var maxWidth = collectionView.frame.width * 0.95
@@ -44,7 +46,21 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     
     //fit about five images per row
     lazy var standardWidth = collectionView.frame.width / 5
-    var imageCollection = ImageCollection()
+    
+    var imageCollection = ImageCollection() {
+        didSet {
+            if oldValue.images != imageCollection.images {
+                documentDidChange()
+            }
+        }
+    }
+    
+    func documentDidChange() {
+        document?.imageGalleryCollec = imageCollection
+        if document?.imageGalleryCollec != nil {
+            document?.updateChangeCount(.done)
+        }
+    }
 
     var document : ImageGalleryDocument?
     
@@ -66,19 +82,22 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
         }
     }
     
+    var thumbnailImage : UIImage?
+    
     @IBAction func close(_ sender: UIBarButtonItem) {
-        save()
+        documentDidChange()
+        document?.thumbnail = thumbnailImage
         dismiss(animated: true) {
             self.document?.close()
         }
     }
     
-    @IBAction func save(_ sender: UIBarButtonItem? = nil) {
-        document?.imageGalleryCollec = imageCollection
-        if document?.imageGalleryCollec != nil {
-            document?.updateChangeCount(.done)
-        }
-    }
+//    @IBAction func save(_ sender: UIBarButtonItem? = nil) {
+//        document?.imageGalleryCollec = imageCollection
+//        if document?.imageGalleryCollec != nil {
+//            document?.updateChangeCount(.done)
+//        }
+//    }
     
     
     var flowLayout: UICollectionViewFlowLayout? {
@@ -177,7 +196,48 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageCell", for: indexPath)
         
         if let currCell = cell as? ImageCollectionViewCell {
-            currCell.imageURL = imageCollection.images[indexPath.item].myURL.imageURL
+            //cached responses
+            let tempURL = imageCollection.images[indexPath.item].myURL.imageURL
+            currCell.imageURL = tempURL
+            let request = URLRequest(url: tempURL)
+            //currCell.imageURL = imageCollection.images[indexPath.item].myURL.imageURL
+            var cache = URLCache.shared
+            //about 10 megabytes and 100 megabytes for about 10 images in memory and 100 in disk
+            cache = URLCache(memoryCapacity: 10 * 1024 * 1024, diskCapacity: 100 * 1024 * 1024, diskPath: nil)
+
+           // DispatchQueue.global(qos: .userInitiated).async {
+                if let data = cache.cachedResponse(for: request)?.data, let image = UIImage(data: data) {
+                    //found image in my cache
+                    currCell.cellImage = image
+                    //putting in most recent thumbnail
+                    if currCell.imageURL == self.imageCollection.images[self.imageCollection.images.count - 1].myURL {
+                        self.thumbnailImage = image
+                    }
+                }
+                else //didn't find it in cache
+                {
+                    currCell.spinner.isHidden = false
+                    currCell.spinner.startAnimating()
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        URLSession.shared.dataTask(with: request) { (data, response, error) in
+                            DispatchQueue.main.async { 
+                                if let data = data, let response = response, error == nil {
+                                    let cachedData = CachedURLResponse(response: response, data: data)
+                                    cache.storeCachedResponse(cachedData, for: request)
+                                    
+                                    currCell.cellImage = UIImage(data: data)
+                                    //putting in most recent thumbnail
+                                    if currCell.imageURL == self.imageCollection.images[self.imageCollection.images.count - 1].myURL {
+                                        self.thumbnailImage = currCell.cellImage
+                                    }
+                                }
+                                //currCell.spinner.stopAnimating()
+                               // currCell.spinner.isHidden = true
+                            }
+                    }.resume()
+                   // }
+                }
+            }
             let tap = UITapGestureRecognizer(target: self, action: #selector(tapSegue(recognizer:)))
             tap.numberOfTapsRequired = 1
             tap.numberOfTouchesRequired = 1

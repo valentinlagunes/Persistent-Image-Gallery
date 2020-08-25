@@ -142,11 +142,6 @@
                                 <action selector="close:" destination="NQe-Kt-gPE" id="Wz3-wZ-o8X"/>
                             </connections>
                         </barButtonItem>
-                        <barButtonItem key="rightBarButtonItem" systemItem="save" id="Kos-pq-8WX">
-                            <connections>
-                                <action selector="save:" destination="NQe-Kt-gPE" id="5YP-jg-aUH"/>
-                            </connections>
-                        </barButtonItem>
                     </navigationItem>
                     <connections>
                         <outlet property="collectionView" destination="DWA-mb-LYN" id="k9d-xI-RFt"/>

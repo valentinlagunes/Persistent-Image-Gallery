@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ImageInfoModel : Codable {
+struct ImageInfoModel : Codable , Equatable {
     init(url: URL, aspectRatio: Double) {
         myURL = url
         ratio = aspectRatio
@@ -16,9 +16,18 @@ struct ImageInfoModel : Codable {
     var myURL : URL
     var ratio : Double
     
+    static func == (lhs: ImageInfoModel, rhs: ImageInfoModel) -> Bool {
+        return lhs.myURL == rhs.myURL
+    }
+    
+}
+
+protocol ImageCollectionDelegate {
+    func ImageCollectionDidChange(_ sender: ImageCollection)
 }
 
 struct ImageCollection : Codable {
+    
     var images = [ImageInfoModel]()
     var json: Data? {
         return try? JSONEncoder().encode(self)

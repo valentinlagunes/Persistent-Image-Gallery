@@ -13,12 +13,8 @@ class ImageCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var imageView: UIImageView!
     
     @IBOutlet weak var spinner: UIActivityIndicatorView!
-    var imageURL: URL? {
-        didSet {
-            fetchImage()
-        }
-    }
-    private var cellImage: UIImage? {
+    var imageURL: URL? 
+    public var cellImage: UIImage? {
         get {
             return imageView.image
         }
@@ -32,22 +28,22 @@ class ImageCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    private func fetchImage() {
-        if let url = imageURL {
-            imageView.image = nil
-            spinner.isHidden = false
-            spinner.startAnimating()
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                let urlContents = try? Data(contentsOf: url)
-                DispatchQueue.main.async {
-                    if let imageData = urlContents, url == self?.imageURL {
-                        self?.cellImage = UIImage(data: imageData)
-                    }
-                }
-            }
-
-        }
-    }
+//    private func fetchImage() {
+//        if let url = imageURL {
+//            imageView.image = nil
+//            spinner.isHidden = false
+//            spinner.startAnimating()
+//            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+//                let urlContents = try? Data(contentsOf: url)
+//                DispatchQueue.main.async {
+//                    if let imageData = urlContents, url == self?.imageURL {
+//                        self?.cellImage = UIImage(data: imageData)
+//                    }
+//                }
+//            }
+//
+//        }
+//    }
     
     
 }
