@@ -7,8 +7,44 @@
 //
 
 import UIKit
+import MobileCoreServices
 
-class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlowLayout, UICollectionViewDragDelegate, UICollectionViewDropDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UIDropInteractionDelegate {
+class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlowLayout, UICollectionViewDragDelegate, UICollectionViewDropDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UIDropInteractionDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    
+    // MARK: - Camera
+    
+    @IBOutlet weak var cameraButton: UIBarButtonItem! {
+        didSet {
+            cameraButton.isEnabled = UIImagePickerController.isSourceTypeAvailable(.camera)
+        }
+    }
+    
+    @IBAction func takePhoto(_ sender: UIBarButtonItem) {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.mediaTypes = [kUTTypeImage as String]
+        picker.allowsEditing = true
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.presentingViewController?.dismiss(animated: true)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if let image = ((info[UIImagePickerController.InfoKey.editedImage] ?? info[UIImagePickerController.InfoKey.originalImage]) as? UIImage)?.scaled(by: 0.25) {
+            let localImage = image.jpegData(compressionQuality: 1.0)!
+            let localRatio = Double(image.size.width) /
+            Double(image.size.height)
+            imageCollection.images.insert(ImageInfoModel(imageData: localImage, aspectRatio: localRatio), at: imageCollection.images.count)
+            collectionView.reloadData()
+            documentDidChange()
+        }
+        picker.presentingViewController?.dismiss(animated: true)
+    }
+    
+    
 
     @IBOutlet weak var collectionView: UICollectionView! {
         didSet {
@@ -81,14 +117,17 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
     
      override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        document?.open { success in
-            if success {
-                self.title = self.document?.localizedName
-                self.imageCollection = self.document?.imageGalleryCollec ?? ImageCollection()
-                self.collectionView.reloadData()
+     //   if document?.documentState != .normal
+      //  {
+            document?.open { success in
+                if success {
+                    self.title = self.document?.localizedName
+                    self.imageCollection = self.document?.imageGalleryCollec ?? ImageCollection()
+                    self.collectionView.reloadData()
+                }
+                
             }
-            
-        }
+       // }
     }
     
     var thumbnailImage : UIImage?
@@ -209,16 +248,23 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageCell", for: indexPath)
         
         if let currCell = cell as? ImageCollectionViewCell {
-            //cached responses
-            let tempURL = imageCollection.images[indexPath.item].myURL.imageURL
-            currCell.imageURL = tempURL
-            let request = URLRequest(url: tempURL)
-            //currCell.imageURL = imageCollection.images[indexPath.item].myURL.imageURL
-            var cache = URLCache.shared
-            //about 10 megabytes and 100 megabytes for about 10 images in memory and 100 in disk
-            cache = URLCache(memoryCapacity: 10 * 1024 * 1024, diskCapacity: 100 * 1024 * 1024, diskPath: nil)
-
-           // DispatchQueue.global(qos: .userInitiated).async {
+            //check if it was a local image first
+            if imageCollection.images[indexPath.item].isLocalImage
+            {
+                currCell.cellImage = UIImage(data: imageCollection.images[indexPath.item].imageData!)
+            }
+            else
+            {
+                //cached responses
+                let tempURL = imageCollection.images[indexPath.item].myURL!.imageURL
+                currCell.imageURL = tempURL
+                let request = URLRequest(url: tempURL)
+                //currCell.imageURL = imageCollection.images[indexPath.item].myURL.imageURL
+                var cache = URLCache.shared
+                //about 10 megabytes and 100 megabytes for about 10 images in memory and 100 in disk
+                cache = URLCache(memoryCapacity: 10 * 1024 * 1024, diskCapacity: 100 * 1024 * 1024, diskPath: nil)
+                
+                // DispatchQueue.global(qos: .userInitiated).async {
                 if let data = cache.cachedResponse(for: request)?.data, let image = UIImage(data: data) {
                     //found image in my cache
                     currCell.cellImage = image
@@ -245,10 +291,11 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
                                     }
                                 }
                                 //currCell.spinner.stopAnimating()
-                               // currCell.spinner.isHidden = true
+                                // currCell.spinner.isHidden = true
                             }
-                    }.resume()
-                   // }
+                        }.resume()
+                        // }
+                    }
                 }
             }
             let tap = UITapGestureRecognizer(target: self, action: #selector(tapSegue(recognizer:)))
@@ -284,7 +331,15 @@ class ImageGalleryViewController: UIViewController, UICollectionViewDelegateFlow
                 destination = navcon.visibleViewController ?? navcon
             }
             if let imageVC = destination as? ImageFullViewController {
-                imageVC.imageURL = url
+                if url != nil
+                {
+                    imageVC.imageURL = url
+                }
+                else
+                {
+                    imageVC.imageView.image = imCell.cellImage
+                    imageVC.image = imCell.cellImage
+                }
             }
         }
         

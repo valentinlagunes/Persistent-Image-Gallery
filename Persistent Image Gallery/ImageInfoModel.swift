@@ -14,9 +14,20 @@ struct ImageInfoModel : Codable , Equatable {
         ratio = aspectRatio
         //indPath = IndexPath()
     }
-    var myURL : URL
+    
+    init(imageData: Data, aspectRatio: Double)
+    {
+        self.imageData = imageData
+        self.ratio = aspectRatio
+        self.isLocalImage = true
+        
+    }
+    
+    var myURL : URL?
+    var imageData : Data?
     var ratio : Double
     var indPath = IndexPath()
+    var isLocalImage = false
     
     static func == (lhs: ImageInfoModel, rhs: ImageInfoModel) -> Bool {
         return lhs.myURL == rhs.myURL

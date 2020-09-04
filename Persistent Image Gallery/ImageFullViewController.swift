@@ -22,7 +22,7 @@ class ImageFullViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
-    private var image: UIImage? {
+    var image: UIImage? {
         get {
             return imageView.image
         }
